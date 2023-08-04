@@ -32,20 +32,22 @@
 
 
 int main() {
-    float mat_a[9] = {
-            -0.43900374825319494,-0.4089935317577108,0.7999999999999999,
-            0.6816558862628512,-0.7316729137553247,0.0,
-            0.5853383310042597,0.545324709010281,0.6000000000000001,
+    matrix_f32 mat1, mat2, result;
 
-    };
+    // Initialize matrices
+    float32_t data1[] = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0};
+    matrix_init_f32(&mat1, 2, 3, data1);
 
-    float mat_dst[9] = {};
-    matrix_f32 A, DST;
+    float32_t data2[] = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0};
+    matrix_init_f32(&mat2, 3, 2, data2);
 
-    matrix_init_f32(&A, 3, 3, mat_a);
-    matrix_init_f32(&DST, 3, 3, mat_dst);
+    float32_t data3[9];
+    matrix_init_f32(&result, 3, 3, data3);
 
-    for(int i = 0; i < 3; i ++){
+    // Perform matrix multiplication
+    status s = matrix_mul_f32(&mat1, &mat2, &result);
+
+    /*for(int i = 0; i < 3; i ++){
         printf("%f %f %f\n", mat_a[3*i], mat_a[3*i+1], mat_a[3*i+2]);
     }
 
@@ -54,7 +56,7 @@ int main() {
     printf("Inverse\n");
     for(int i = 0; i < 3; i ++){
         printf("%f %f %f\n", mat_dst[3*i], mat_dst[3*i+1], mat_dst[3*i+2]);
-    }
+    }*/
 
     /*// Test mult
 

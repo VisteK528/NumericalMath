@@ -1,110 +1,35 @@
 #include "../include/matrix_math.h"
 
-static int MAX_COL(matrix_f32* matrix, int start_row, int column){
-    int max_index = start_row;
-
-    float max_value = fabsf(matrix->p_data[start_row*matrix->num_cols+column]);
-
-    for(int i = start_row; i < matrix->num_rows; i++){
-        if(fabsf(matrix->p_data[i*matrix->num_cols+column]) > max_value){
-            max_index = i;
-        }
-    }
-    return max_index;
-}
-
-/// Zamiana A z B, A idzie na miejsce B
-static void SWAP_ROWS(matrix_f32* matrix, int row_a, int row_b){
-    float buffer;
-
-    for(int i = 0; i < matrix->num_cols; i++){
-        buffer = matrix->p_data[row_b*matrix->num_cols+i];
-        matrix->p_data[row_b*matrix->num_cols+i] = matrix->p_data[row_a*matrix->num_cols+i];
-        matrix->p_data[row_a*matrix->num_cols+i] = buffer;
-    }
-}
-
-
-static void INVERSE_TRIANGULAR(matrix_f32* src, matrix_f32* inv, uint8_t upper){
-    /// Dodać jeszcze obejście algorytmu odwracania, jeżeli mamy na diagonali same 1
-    /// Wtedy odwrotna macierz to po prostu macierz ze zmienionymi znakami
-
-    float coeff;
-
-    uint16_t rows = src->num_rows;
-    uint16_t columns = src->num_cols;
-
-    for(int i = 0; i < rows; i++){
-        for(int j = 0; j < columns; j++){
-            if(i == j){
-                inv->p_data[i*rows+j] = 1;
-            }
-            else{
-                inv->p_data[i*rows+j] = 0;
-            }
-        }
-    }
-
-    if(upper == 0){
-        for(int i = 0; i < columns; i++){
-            for(int j = i; j < rows; j++){
-                if(i == j){
-                    coeff = 1/src->p_data[i*columns+j];
-                }
-                else{
-                    coeff = -src->p_data[j*columns+i];
-                }
-
-                for(int z = 0; z < columns; z++){
-                    if(i == j){
-                        src->p_data[j*columns+z] = coeff*src->p_data[i*columns+z];
-                        inv->p_data[j*columns+z] = coeff*inv->p_data[i*columns+z];
-                    }
-                    else{
-                        src->p_data[j*columns+z] = src->p_data[j*columns+z] + coeff*src->p_data[i*columns+z];
-                        inv->p_data[j*columns+z] = inv->p_data[j*columns+z] + coeff*inv->p_data[i*columns+z];
-                    }
-                }
-            }
-
-        }
-    }
-    else{
-        for(int i = rows-1; i >= 0; i--){
-            for(int j = i; j >= 0; j--){
-                if(i == j){
-                    coeff = 1/src->p_data[i*columns+j];
-                }
-                else{
-                    coeff = -src->p_data[j*columns+i];
-                }
-
-                for(int z = 0; z < columns; z++){
-                    if(i == j){
-                        src->p_data[j*columns+z] = coeff*src->p_data[i*columns+z];
-                        inv->p_data[j*columns+z] = coeff*inv->p_data[i*columns+z];
-                    }
-                    else{
-                        src->p_data[j*columns+z] = src->p_data[j*columns+z] + coeff*src->p_data[i*columns+z];
-                        inv->p_data[j*columns+z] = inv->p_data[j*columns+z] + coeff*inv->p_data[i*columns+z];
-                    }
-                }
-            }
-
-        }
-    }
-}
-
-void matrix_init_f32(matrix_f32* mat, uint16_t num_cols, uint16_t num_rows, float* p_data){
+void matrix_init_f32(matrix_f32* mat, uint16_t num_cols, uint16_t num_rows, float32_t* p_data){
     mat->num_cols = num_cols;
     mat->num_rows = num_rows;
     mat->p_data = p_data;
 }
 
-status lu_decomposition(matrix_f32* src, matrix_f32* lt, matrix_f32* ut, matrix_f32* p){
+bool matrix_is_equal_f32(matrix_f32* a, matrix_f32* b, float32_t tolerance){
+    if(a->num_cols != b->num_cols || a->num_rows != b->num_rows){
+        return false;
+    }
+
+    uint16_t num_cols = a->num_cols;
+    uint16_t num_rows = b->num_rows;
+    float32_t diff;
+
+    for(uint16_t i = 0; i < num_rows; i++){
+        for(uint16_t j = 0; j < num_cols; j++){
+            diff = fabsf(a->p_data[i*num_cols+j] - b->p_data[i*num_cols+j]);
+            if(diff > tolerance){
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+status lu_decomposition_f32(matrix_f32* src, matrix_f32* lt, matrix_f32* ut, matrix_f32* p){
     uint16_t rows = src->num_rows;
     uint16_t columns = src->num_cols;
-    float l;
+    float32_t l;
     int max;
 
     // Wypełnienie macierzy lt i ut zeramy oraz macierzy lt 1 na przekątnej
@@ -155,7 +80,7 @@ status lu_decomposition(matrix_f32* src, matrix_f32* lt, matrix_f32* ut, matrix_
         }
     }
 
-   return SUCCESS;
+   return MATH_SUCCESS;
 }
 
 status inverse_matrix(matrix_f32* src, matrix_f32* dst){
@@ -164,11 +89,11 @@ status inverse_matrix(matrix_f32* src, matrix_f32* dst){
 
     if(rows != columns){
         // Aby macierz była odwracalna musi być macierzą kwadratową
-        return WRONG_MATRIX_DIMENSIONS;
+        return MATH_WRONG_MATRIX_DIMENSIONS;
     }
     else if(rows != dst->num_rows || columns != dst->num_cols){
         // Macierz src i dst muszą mieć  takie same wymiary
-        return WRONG_MATRIX_DIMENSIONS;
+        return MATH_WRONG_MATRIX_DIMENSIONS;
     }
 
     // Wypełnienie macierzy DST jako jednostkowej
@@ -183,12 +108,12 @@ status inverse_matrix(matrix_f32* src, matrix_f32* dst){
         }
     }
 
-    float lt_data[rows*columns];
-    float ut_data[rows*columns];
-    float buffer_data[rows*columns];
-    float p_data[rows*columns];
-    float inv_lt_data[rows*columns];
-    float inv_ut_data[rows*columns];
+    float32_t lt_data[rows*columns];
+    float32_t ut_data[rows*columns];
+    float32_t buffer_data[rows*columns];
+    float32_t p_data[rows*columns];
+    float32_t inv_lt_data[rows*columns];
+    float32_t inv_ut_data[rows*columns];
 
     matrix_f32 LT, UT, P, buffer, INV_LT, INV_UT;
 
@@ -199,24 +124,24 @@ status inverse_matrix(matrix_f32* src, matrix_f32* dst){
     matrix_init_f32(&INV_LT, rows, columns, inv_lt_data);
     matrix_init_f32(&INV_UT, rows, columns, inv_ut_data);
 
-    lu_decomposition(src, &LT, &UT, &P);
+    lu_decomposition_f32(src, &LT, &UT, &P);
 
     INVERSE_TRIANGULAR(&LT, &INV_LT, 0);
     INVERSE_TRIANGULAR(src, &INV_UT, 1);
 
-    matrix_mult(&INV_UT, &INV_LT, &buffer);
-    matrix_mult(&buffer, &P, dst);
-    return SUCCESS;
+    matrix_mul_f32(&INV_UT, &INV_LT, &buffer);
+    matrix_mul_f32(&buffer, &P, dst);
+    return MATH_SUCCESS;
 }
 
-status matrix_mult(matrix_f32* a, matrix_f32* b, matrix_f32* dst){
+status matrix_mul_f32(matrix_f32* a, matrix_f32* b, matrix_f32* dst){
     /// Możliwe wtedy i tylko wtedy gdy liczba kolumn a jest równa liczbie wierszy b
     if(a->num_cols != b->num_rows){
-        return WRONG_MATRIX_DIMENSIONS;
+        return MATH_WRONG_MATRIX_DIMENSIONS;
     }
 
     if(a->num_rows != dst->num_rows || b->num_cols != dst->num_cols){
-        return WRONG_MATRIX_DIMENSIONS;
+        return MATH_WRONG_MATRIX_DIMENSIONS;
     }
 
     uint16_t rows = b->num_cols;
@@ -224,18 +149,18 @@ status matrix_mult(matrix_f32* a, matrix_f32* b, matrix_f32* dst){
 
     uint16_t common = a->num_cols;
 
-    float sum;
+    float32_t sum;
     for(uint16_t k = 0; k < rows; k++){
-        for(uint16_t i = 0; i < rows; i++){
+        for(uint16_t i = 0; i < columns; i++){
             sum = 0;
             for(uint16_t j = 0; j < common; j++){
-                sum += a->p_data[i*columns+j] * b->p_data[j*columns+k];
+                sum += a->p_data[k*a->num_cols+j] * b->p_data[j*b->num_cols+i];
             }
-            dst->p_data[i*rows+k] = sum;
+            dst->p_data[k*rows+i] = sum;
         }
     }
 
-    return SUCCESS;
+    return MATH_SUCCESS;
 }
 
 status matrix_add(matrix_f32* a, matrix_f32* b, matrix_f32* dst){
