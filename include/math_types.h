@@ -2,13 +2,11 @@
 #define NUMERICALMATH_MATH_TYPES_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef float float32_t;
 typedef double float64_t;
-typedef enum{
-    true,
-    false
-} bool;
+
 
 typedef enum{
     MATH_SUCCESS,
