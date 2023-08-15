@@ -83,7 +83,7 @@ status lu_decomposition_f32(matrix_f32* src, matrix_f32* lt, matrix_f32* ut, mat
    return MATH_SUCCESS;
 }
 
-status inverse_matrix(matrix_f32* src, matrix_f32* dst){
+status inverse_matrix_f32(matrix_f32* src, matrix_f32* dst){
     uint16_t rows = src->num_rows;
     uint16_t columns = src->num_cols;
 
